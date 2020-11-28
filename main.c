@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    if (isp_init(argv[1], 115200, 8, 1, 'N', 30) != 0)
+    if (isp_init(argv[1], 460800, 8, 1, 'N', 30) != 0)
     {
         return -1;
     }
@@ -68,11 +68,11 @@ int main(int argc, char *argv[])
 
     isp_close();
 
-    if (isp_init(argv[1], 115200, 8, 1, 'N', 30) != 0)
-    {
-        fclose(fp);
-        return -1;
-    }
+    // if (isp_init(argv[1], 460800, 8, 1, 'N', 30) != 0)
+    // {
+    //     fclose(fp);
+    //     return -1;
+    // }
 
     //isp_get_version();
 

@@ -68,7 +68,7 @@ int serialOpen (const char *device, const int baud, const int databits, const in
     case  115200:	myBaud =  B115200 ; break ;
     case  230400:	myBaud =  B230400 ; break ;
         //nicek: 以下波特率在ubuntu里没问题，但mac下不支持
-    /* case  460800:	myBaud =  B460800 ; break ; */
+    case  460800:	myBaud =  B460800 ; break ;
     /* case  500000:	myBaud =  B500000 ; break ; */
     /* case  576000:	myBaud =  B576000 ; break ; */
     /* case  921600:	myBaud =  B921600 ; break ; */
