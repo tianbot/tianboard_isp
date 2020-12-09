@@ -264,7 +264,7 @@ char *get_response(unsigned char *buff, unsigned int data_len)
     return NULL;
 }
 
-char* isp_get_version(void)
+char *isp_get_version(void)
 {
     int i = 0;
     int recv_cnt = 10;
@@ -400,13 +400,36 @@ int isp_get_pid(void)
 
 int isp_erase_all()
 {
+    int i;
+
     printf("erasing flash ");
-    serialPutchar(fd, 0x43);
-    serialPutchar(fd, 0xbc);
-    wait_ack();
-    serialPutchar(fd, 0xff);
-    serialPutchar(fd, 0x00);
-    wait_ack();
+    fflush(stdout);
+
+    for (i = 0; i < stm32info.cmd_count; i++)
+    {
+        if (stm32info.cmd[i] == 0x43)
+        {
+            serialPutchar(fd, 0x43);
+            serialPutchar(fd, 0xbc);
+            wait_ack();
+            serialPutchar(fd, 0xff);
+            serialPutchar(fd, 0x00);
+            wait_ack();
+            break;
+        }
+        if (stm32info.cmd[i] == 0x44)
+        {
+            serialPutchar(fd, 0x44);
+            serialPutchar(fd, 0xbb);
+            wait_ack();
+            serialPutchar(fd, 0xff);
+            serialPutchar(fd, 0xff);
+            serialPutchar(fd, 0x00);
+            wait_ack();
+            break;
+        }
+    }
+
     serialFlush(fd);
     printf(GREEN "[done]\n" NONE);
     return 0;
