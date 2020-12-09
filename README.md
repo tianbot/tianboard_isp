@@ -12,3 +12,6 @@ option:
 >-s serial port  the host serial port connected to the board  
 >-v              version  
 >-h              help  
+
+Example:
+>./tianboard_isp -s /dev/ttyUSB0 -b 115200 -n 115200 -f ../tianboard/build/tianboard.bin -r
