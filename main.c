@@ -22,7 +22,7 @@ void help(void)
            "   -r              reset the board and enter FW update mode\r\n"
            "   -b baudrate     the serial baudrate of the current FW\r\n"
            "   -n baudrate     the serial baudrate of the new FW\r\n"
-           "   -f hex file     the firmware hex file to be updated\r\n"
+           "   -f bin file     the firmware bin file to be updated\r\n"
            "   -s serial port  the host serial port connected to the board\r\n"
            "   -v              version\r\n"
            "   -h              help\r\n"
