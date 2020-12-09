@@ -133,7 +133,18 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        isp_get_version();
+        char *version = isp_get_version();
+
+        if (version != NULL)
+        {
+            printf("Current FW version:\r\n");
+            printf(GREEN "%s\r\n" NONE, version);
+        }
+        else
+        {
+            printf(RED "Get version failed, exit\r\n" NONE);
+            exit(-1);
+        }
 
         isp_reboot();
 
@@ -177,8 +188,21 @@ int main(int argc, char *argv[])
         fclose(fp);
         return -1;
     }
+    printf("wati for board boot up...\r\n");
+    sleep(6);
 
-    isp_get_version();
+    char *version = isp_get_version();
+
+    if (version != NULL)
+    {
+        printf("New FW version:\r\n");
+        printf(GREEN "%s\r\n" NONE, version);
+    }
+    else
+    {
+        printf(RED "Get version failed, exit\r\n" NONE);
+        exit(-1);
+    }
 
     isp_close();
     fclose(fp);

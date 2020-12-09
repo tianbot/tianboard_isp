@@ -32,7 +32,7 @@ int isp_write_bin(FILE *fp);
 int isp_verify(FILE *fp);
 
 void isp_reboot(void);
-void isp_get_version(void);
+char* isp_get_version(void);
 void isp_go_app(void);
 
 #endif

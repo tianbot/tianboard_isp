@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 static int fd;
 static stm32info_t stm32info;
@@ -157,37 +158,32 @@ void isp_reboot()
     printf(GREEN "[done]\n" NONE);
 }
 
-char *get_response(unsigned char *buff, unsigned int len)
+char *get_response(unsigned char *buff, unsigned int data_len)
 {
-#if 0
     static char response[128];
     static uint8_t state = 0;
-    uint8_t *p = data;
-    static vector<uint8_t> recv_msg;
+    uint8_t *p = buff;
     static uint32_t len;
-    uint32_t j;
+    static uint32_t offset;
+    uint8_t bcc = 0;
+    uint32_t i;
 
     while (data_len != 0)
     {
         switch (state)
         {
         case 0:
-            if (*p == (PROTOCOL_HEAD & 0xFF))
+            if (*p == 0x55)
             {
-                recv_msg.clear();
-                recv_msg.push_back(PROTOCOL_HEAD & 0xFF);
+                len = 0;
                 state = 1;
+                offset = 0;
             }
-            p++;
-            data_len--;
             break;
 
         case 1:
-            if (*p == ((PROTOCOL_HEAD >> 8) & 0xFF))
+            if (*p == 0xaa)
             {
-                recv_msg.push_back(((PROTOCOL_HEAD >> 8) & 0xFF));
-                p++;
-                data_len--;
                 state = 2;
             }
             else
@@ -197,143 +193,129 @@ char *get_response(unsigned char *buff, unsigned int len)
             break;
 
         case 2: // len
-            recv_msg.push_back(*p);
             len = *p;
-            p++;
-            data_len--;
             state = 3;
             break;
 
         case 3: // len
-            recv_msg.push_back(*p);
             len += (*p) * 256;
             if (len > 1024 * 10)
             {
                 state = 0;
                 break;
             }
-            p++;
-            data_len--;
             state = 4;
             break;
 
         case 4: // pack_type
-            recv_msg.push_back(*p);
-            p++;
-            data_len--;
-            len--;
-            state = 5;
+            if (*p == 0x00)
+            {
+                state = 5;
+                len--;
+            }
+            else
+            {
+                state = 0;
+            }
             break;
 
         case 5: // pack_type
-            recv_msg.push_back(*p);
-            p++;
-            data_len--;
-            len--;
-            state = 6;
+            if (*p == 0xC0)
+            {
+                state = 6;
+                len--;
+            }
+            else
+            {
+                state = 0;
+            }
             break;
 
-        case 6: //
+        case 6: //data
             if (len--)
             {
-                recv_msg.push_back(*p);
-                p++;
-                data_len--;
+                response[offset++] = (*p);
             }
             else
             {
-                state = 7;
+                bcc = 0;
+                state = 0;
+                bcc ^= 0x00;
+                bcc ^= 0xC0;
+                for (i = 0; i < offset; i++)
+                {
+                    bcc ^= response[i];
+                }
+
+                if (bcc == *p)
+                {
+                    return response;
+                }
             }
             break;
-
-        case 7:
-        {
-            int i;
-            uint8_t bcc = 0;
-            recv_msg.push_back(*p);
-            p++;
-            data_len--;
-            state = 0;
-
-            for (i = 4; i < recv_msg.size(); i++)
-            {
-                bcc ^= recv_msg[i];
-            }
-
-            if (bcc == 0)
-            {
-                tianbotDataProc(&recv_msg[0], recv_msg.size()); // process recv msg
-                communication_timer_.stop();                    // restart timer for communication timeout
-                communication_timer_.start();
-            }
-            else
-            {
-                ROS_INFO("BCC error");
-            }
-            state = 0;
-        }
-        break;
 
         default:
             state = 0;
             break;
         }
+        data_len--;
+        p++;
     }
-#endif
+    return NULL;
 }
 
-void isp_get_version(void)
+char* isp_get_version(void)
 {
     int i = 0;
-    int recv_cnt = 100;
-    static char buf[128] = "version";
+    int recv_cnt = 10;
+    char send_buf[32] = "version";
+    char recv_buf[8192];
     unsigned int len;
     unsigned short cmd = 0x4000;
     unsigned char bcc = 0;
-
-    serialPutchar(fd, 0x55);
-    serialPutchar(fd, 0xAA);
-
-    len = 2 + strlen(buf);
-
-    serialPutchar(fd, len & 0xFF);
-    serialPutchar(fd, (len >> 8) & 0xFF);
-
-    serialPutchar(fd, cmd & 0xFF);
-    serialPutchar(fd, (cmd >> 8) & 0xFF);
-    bcc ^= cmd & 0xFF;
-    bcc ^= (cmd >> 8) & 0xFF;
-    for (i = 0; i < strlen(buf); i++)
-    {
-        serialPutchar(fd, buf[i]);
-        bcc ^= buf[i];
-    }
-
-    serialPutchar(fd, bcc);
-
+    char *response = NULL;
     do
     {
-        usleep(1000);
+        serialPutchar(fd, 0x55);
+        serialPutchar(fd, 0xAA);
+
+        len = 2 + strlen(send_buf);
+
+        serialPutchar(fd, len & 0xFF);
+        serialPutchar(fd, (len >> 8) & 0xFF);
+
+        serialPutchar(fd, cmd & 0xFF);
+        serialPutchar(fd, (cmd >> 8) & 0xFF);
+        bcc ^= cmd & 0xFF;
+        bcc ^= (cmd >> 8) & 0xFF;
+        for (i = 0; i < strlen(send_buf); i++)
+        {
+            serialPutchar(fd, send_buf[i]);
+            bcc ^= send_buf[i];
+        }
+
+        serialPutchar(fd, bcc);
+
+        usleep(100000);
         int len = serialDataAvail(fd);
         if (len != 0)
         {
             i = 0;
 
-            while ((len--) && (i < sizeof(buf)))
+            while ((len--) && (i < sizeof(recv_buf)))
             {
-                buf[i] = serialGetchar(fd);
+                recv_buf[i] = serialGetchar(fd);
                 i++;
             }
-            get_response(buf, i);
+            response = get_response(recv_buf, i);
+            if (response != NULL)
+            {
+                break;
+            }
         }
-    } while ((i < sizeof(buf)) && recv_cnt);
-    if (recv_cnt == 0)
-    {
-        printf(RED "Get version failed\r\n" NONE);
-        exit(-1);
-    }
-    usleep(100000);
-    printf(GREEN "[%s]\n" NONE, buf);
+        recv_cnt--;
+    } while ((i < sizeof(recv_buf)) && recv_cnt);
+    return response;
 }
 
 int isp_sync()
