@@ -183,14 +183,13 @@ int main(int argc, char *argv[])
 
     isp_close();
 
-    if (isp_init(argument.serial, argument.baudrate_new, 8, 1, 'N', 30) != 0)
-    {
-        fclose(fp);
-        return -1;
-    }
-    printf("wati for board boot up...\r\n");
+    printf("wait for board boot up...\r\n");
     sleep(6);
 
+    if (isp_init(argument.serial, argument.baudrate_new, 8, 1, 'N', 30) != 0)
+    {
+        return -1;
+    }
     char *version = isp_get_version();
 
     if (version != NULL)

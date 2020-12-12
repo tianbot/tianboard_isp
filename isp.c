@@ -267,13 +267,14 @@ char *get_response(unsigned char *buff, unsigned int data_len)
 char *isp_get_version(void)
 {
     int i = 0;
-    int recv_cnt = 10;
+    int recv_cnt = 20;
     char send_buf[32] = "version";
     char recv_buf[8192];
     unsigned int len;
     unsigned short cmd = 0x4000;
     unsigned char bcc = 0;
     char *response = NULL;
+    serialFlush(fd);
     do
     {
         serialPutchar(fd, 0x55);
@@ -296,7 +297,7 @@ char *isp_get_version(void)
 
         serialPutchar(fd, bcc);
 
-        usleep(100000);
+        usleep(50000);
         int len = serialDataAvail(fd);
         if (len != 0)
         {
