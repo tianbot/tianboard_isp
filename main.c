@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
         fclose(fp);
         return -1;
     }
-
+    usleep(50000);
     if (isp_sync() != 0)
     {
         fclose(fp);
@@ -183,8 +183,8 @@ int main(int argc, char *argv[])
 
     isp_close();
 
-    printf("wait for board boot up...\r\n");
-    sleep(6);
+    printf("wait for board init...\r\n");
+    sleep(8);
 
     if (isp_init(argument.serial, argument.baudrate_new, 8, 1, 'N', 30) != 0)
     {

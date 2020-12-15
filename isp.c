@@ -52,6 +52,7 @@ static int isp_write_block(unsigned char *data, unsigned int addr, int len)
     serialPutchar(fd, 0x31);
     serialPutchar(fd, 0xce);
     wait_ack();
+
     serialPutchar(fd, temp[0]);
     serialPutchar(fd, temp[1]);
     serialPutchar(fd, temp[2]);
@@ -445,7 +446,7 @@ int isp_write_bin(FILE *fp)
     fseek(fp, 0L, SEEK_END);
     filesize = ftell(fp);
     rewind(fp);
-
+    printf("filesize %d \r\n", filesize);
     printf("download %3d%%\n", offset * 100 / filesize);
 
     while (1)
@@ -464,7 +465,10 @@ int isp_write_bin(FILE *fp)
             offset += 256;
         }
     }
-    isp_write_block(buf, 0x08000000 + offset, i);
+    if (i != 0)
+    {
+        isp_write_block(buf, 0x08000000 + offset, i);
+    }
     offset += i;
     printf(UP_LINE "download %3d%% " GREEN "[done]\n" NONE, offset * 100 / filesize);
     return 0;
