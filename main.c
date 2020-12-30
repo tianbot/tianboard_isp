@@ -35,7 +35,7 @@ int argument_parse(int argc, char *argv[], struct argument_struct *p_argument)
     memset(p_argument, 0, sizeof(struct argument_struct));
     p_argument->baudrate = 460800;
     p_argument->baudrate_new = 460800;
-    //p_argument->reset_flag = 1;
+    p_argument->reset_flag = 0;
     p_argument->serial = "/dev/ttyUSB0";
     while (--argc)
     {
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
         isp_close();
     }
 
-    if (isp_init(argument.serial, 115200, 8, 1, 'E', 30) != 0)
+    if (isp_init(argument.serial, 57600, 8, 1, 'E', 30) != 0)
     {
         fclose(fp);
         return -1;

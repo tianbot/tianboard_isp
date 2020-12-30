@@ -441,6 +441,7 @@ int isp_write_bin(FILE *fp)
 {
     unsigned char buf[256];
     int i = 0, offset = 0;
+    int read_size;
     int filesize;
 
     fseek(fp, 0L, SEEK_END);
@@ -451,26 +452,15 @@ int isp_write_bin(FILE *fp)
 
     while (1)
     {
-        fread(&buf[i], 1, 1, fp);
-        if (feof(fp))
+        read_size = fread(buf, 1, filesize - offset > 256 ? 256 : filesize - offset, fp);
+        isp_write_block(buf, 0x08000000 + offset, 256);
+        offset += read_size;
+        printf(UP_LINE "download %3d%%\n", offset * 100 / filesize);
+        if (offset >= filesize)
         {
             break;
         }
-        i++;
-        if (i == 256)
-        {
-            isp_write_block(buf, 0x08000000 + offset, 256);
-            printf(UP_LINE "download %3d%%\n", offset * 100 / filesize);
-            i = 0;
-            offset += 256;
-        }
     }
-    if (i != 0)
-    {
-        isp_write_block(buf, 0x08000000 + offset, i);
-    }
-    offset += i;
-    printf(UP_LINE "download %3d%% " GREEN "[done]\n" NONE, offset * 100 / filesize);
     return 0;
 }
 
